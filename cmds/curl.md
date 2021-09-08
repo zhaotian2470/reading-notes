@@ -1,4 +1,4 @@
-# Test CORS with curl
+# Test CORS
 
 Send pre-flight request:
 ```
@@ -11,3 +11,10 @@ You should get a successful response tha includes “Access-Control-Allow-Origin
 
 Note:
 * response header "Access-Control-Allow-Methods" should not be "*"
+
+# Send File
+
+Send file to web server
+```
+curl -XPOST -F 'fileName=1.png' -F 'file=@"/Users/zhaotian/Downloads/1.png"' -F 'width=3024' -F 'height=4032' 'http://127.0.0.1'
+```
