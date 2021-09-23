@@ -66,7 +66,7 @@ Go语言中，变量之间没有隐式类型转换，不能类型之间只能强
 
 ## 字符串的实现
 Go语言使用如下实现表示字符串
-```
+``` go
 type StringHeader struct {
 	Data uintptr
 	Len int
@@ -82,3 +82,170 @@ type StringHeader struct {
 字符串和字节数组的转换：涉及到复制。当字符串大于32个字节时，还需要申请堆内存。
 
 
+# 数组
+Go语言中的数组，具有如下特点：
+* 不能进行扩容；
+* 在复制和传递时，为值赋值；
+
+其底层实现如下：
+``` go
+type Array struct {
+	Elem *Type
+	Bound int64
+}
+```
+
+# 切片的使用方法和底层原理
+
+## 切片的实现
+切片的底层数据结构如下：
+``` go
+type SliceHeader struct {
+	Data uintptr // 切片元素对应的底层数据元素的地址
+	Len int      // 切片中元素的数目
+	Cap int      // 从切片的开始位置，到底层数组的结尾位置长度
+}
+```
+
+## 切片的使用
+* 切片的截取：切片被截取后，仍然指向原始切片的底层数据；
+* 切片的复制：切片的复制其实是对SliceHeader结构的值复制，不会改变底层的数据源；如果不想和旧数据共享数据源，可以使用copy函数；
+* 切片的收缩：append可以添加新的元素到切片的末尾，它可以接受可变长度的元素，并且可以自动扩容；
+
+# 哈希表与Go语言实现机制
+
+## 哈希碰撞和解决办法
+哈希碰撞的主要解决办法：
+* 拉链法：使用额外的存储保存指针，并且元素的存储地址不连续，导致增加哈希表大小，无法高效利用CPU高速缓存；
+* 开发寻址法：具有良好的CPU高速缓存利用率和高性能；
+
+## map的基本操作
+map为nil时，存在如下特点：
+* 可以读取；
+* 不能写入，如果写入则panic；
+
+map的并发冲突：
+* 可以并发读取；
+* 不能并发读写，如果并发读写则panic：Go语言为了保证大多数场景下的查找效率，不允许并发读写map；
+
+## key的比较
+* slice，map，function不能比较；
+* array，struct，interface是否能比较，取决于具体的值；
+* 其它数据类型，可以比较，例如：指针、通道等；
+
+## 哈希表底层结构
+哈希表的定义如下：
+``` go
+type hmap struct {
+	count int                 // map元素的个数
+	flags uint8               // map状态，例如是否写入
+	B uint8                   // map桶的数量 = 2^^B
+	noverflow uint16          // 溢出的桶的数量
+	hash0 uint32              // 生成hash的随机数种子
+	buckets unsafe.Pointer    // 指向当面map对应的桶
+	oldbuckets unsafe.Pointer // 指向map扩容时的旧桶
+	nevacuate uintptr         // 标记map扩容时旧桶数据转移状态，旧桶小于nevacuate的数据都已经转移到新桶中
+	extr *mapextra            // map中溢出桶
+}
+
+// bmap代表桶，在运行时只列出了key的哈希值前8位：
+type bmap {
+	tophash [bucketCnt]uint8
+}
+
+// 编译后，对应的数据结构大致如下（伪代码）：
+type bmap {
+	topbits [8]uint8
+	keys [8]keytype
+	values [8]valuetype
+	pad uintptr
+	overflow uintptr
+}
+```
+
+备注：
+* key/value分开存储，是为了在字节对齐时压缩空间；
+
+## 哈希表原理
+哈希表的一些操作如下：
+* 插入数据时，当指定桶中的数据超过8个时，不会开辟一个新桶，而是将数据放到溢出桶；
+* 删除数据时，tophash重的指定位置会存储emptyOne（当前位置为空），如果之后的元素都是空的，则存储emptyRest；
+* map桶重建的时机：负载因子超过6.5（双倍重建）；溢出桶的数量过多（等量重建）；
+
+# 函数与栈
+
+## 函数闭包
+函数闭包中，可以引用外部变量val。由于是引用，因此访问时会获取val地址中的值，即最后放入其中的值，而不是遍历所有值
+
+## 栈扩容与栈转移
+栈管理的两个问题：
+* 栈扩容：函数序言阶段，判断是否需要对栈进行扩容；
+* 栈调整：栈扩容时，需要：将协程状态设置为Gcopystack，以便在垃圾回收状态下不会扫描该协程栈带来错误；复制栈，如果栈中包括指针，则需要调整；
+
+# defer延迟调用
+
+延迟调用的策略：
+* 可能调用多次的defer，采用堆分配；
+* 最多调用一次的defer，go 1.13采用栈分配；
+* 最多调用一次的defer，go 1.14采用内联优化，从而达到和直接调用差不多的性能：通过在栈中初始化1字节的临时变量，以位图的形式来判断函数是否需要执行；
+
+# 异常与异常捕获
+
+## panic与recover使用方法
+使用方法：
+* 即使有多个panic函数，最上层的函数只需要一个recover函数就能进入正常流程；
+* 内层函数的recover，不能捕获外层函数的panic
+
+## panic与recover底层原理
+panic的底层原理：
+* 每个协程有panic链，每次调用panic时，就会往链上添加panic结构体；
+* panic简单遍历协程中所有的defer，并通过反射的方式调用defer中的函数：gopanic函数的栈帧大小固定而且很小，可能没有足够的空间来存放defer函数的参数，通过反射来调用时不需要准备参数；
+
+# 接口与程序设计模式
+
+## 接口的使用
+Go语言中有两种接口：
+* 带方法签名的接口;
+* 空接口;
+
+
+## 接口底层原理
+
+接口存在一定的性能损失：
+* 接口的方法调用，需要构造接口对象，并寻找函数指针；
+* 接口的data字段，存储的是接口中具体值的指针，因此接口会复制原始值，并导致内存逃逸，内存回收；
+
+### 带方法签名的接口
+带方法签名的接口，定义实现如下：
+``` go
+type iface struct {
+	tab *itab           // 类型信息
+	data unsafe.Pointer // 数据信息，例如：动态类型的数据信息
+}
+
+type itab struct {
+	inter *interfacetype  // 接口类型
+	_type *_type          // 动态类型
+	hash uint32           // 动态类型的唯一标识，是_type字段中hash的副本
+	_ [4]byte             // 填充字段
+	fun [1]uintptr        // 动态类型中的函数指针列表，用于运行时接口调用动态函数
+}
+
+type interfacetype struct {
+	typ _type      // 类型信息
+	pkgpath name   // 接口所在包名
+	mhdr []imethod // 接口中暴露的方法在最终可执行文件中的名字和类型的偏移量
+}
+```
+
+接口动态调用时，先找到接口，再通过偏移量找到要调用的函数指针。
+
+
+### 空接口
+空接口的定义如下：
+``` go
+type eface struct {
+	_type *_type        // 动态类型信息
+	data unsafe.Pointer // 动态数据信息
+}
+```
