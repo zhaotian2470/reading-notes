@@ -249,3 +249,62 @@ type eface struct {
 	data unsafe.Pointer // 动态数据信息
 }
 ```
+
+# 反射高级编程
+
+## 反射的基本使用方法
+反射的定义如下：
+* reflect.Value可以看成反射的值，是一个结构体，内部包含很多方法；
+* reflect.Type可以看成反射的实际类型，是一个接口，包含和类型有关的很多方法签名；
+对应的定义如下：
+``` go
+type Type interface {
+	Align() int
+	FieldAlign() int
+	Method(int) Method
+	MethodByName(string) (Method, bool)
+	String() string
+}
+```
+
+反射之间的相互转换：
+* interface{}可以转化为reflect.Value, reflect.Type；
+* reflect.Value可以转换为interface{}；
+* reflect.Value可以转换为reflect.Type；
+
+反射的方法：
+* Elem(): reflect.Value返回指针和接口指向的数据；reflect.Type获取各种类型（指针、接口、数组、通道、切片、哈希表等）指向的类型；
+* Set(): reflect.Value的Set方法，可以修改反射的值；
+* NumField(), Field(): 配合使用reflect.Type.NumField, reflect.Value.Field()，可以遍历结构体字段；
+* NumMethod(), Method(): 配合使用reflect.Type.NumMethod, reflect.Type.Method()，可以遍历结构体字段；
+* MethodByName(): reflect.Value.MethodByName返回对应方法；
+* Call(): 函数/方法的reflect.Value对象，具有Call方法；
+* XXXOf(): reflect.XXXOf方法，可以构造特定的reflect.Type，例如struct, array, chan, pointer, slice, map, func；
+* MakeXXX(): reflect.MakeXXX方法，可以构造特定类型的reflect.Value，例如chan, func, map, slice；
+* New(): reflect.New方法，根据反射的类型，分配相应大小的内存；
+
+## 反射的底层原理
+反射的底层原理：
+* reflect.TypeOf：将接口变量参数转化为实际空接口emptyInterface，并获取空接口的类型值；
+* reflect.ValueOf: 存储接口的值、类型，以及flag标志
+  flag的意义如下：
+   * 低5位：类型标志，和kind对应；
+   * 低6-10位：字段的特征，例如：
+      * flagStickyRo: 结构未导出的字段，不是嵌入的字段；
+	  * flagEmbedRO: 结构未导出的字段，是嵌入的字段；
+	  * flagIndir: 间接的；
+	  * flagAddr: 可寻址；
+	  * flagMethod: 该值位method；
+	  * flagRO: 结构未导出的字段；
+   * 其余位：方法的index序号，代表第几个方法；
+* relfect.Value.Elem：对于指针来说，如果flag标识了reflect.Value是间接的，则返回数据真实地址，否则返回本身，并且会将flag修改位flagAddr；
+* reflect.Value.Call: 其参数、返回值都是reflect.Value数组，流程如下：
+   1. 获取函数/方法指针；
+   1. 进行有效性验证；
+   1. 调用funcLayout函数，用于构建函数参数以及返回值的栈帧布局，其中：
+      * frametype: 调用时需要的内存大小；
+	  * retOffset：函数参数以及返回值在内存的位置；
+	  * framePool：内存缓存池，用于没有返回值的场景中复用内存；
+   1. 构建参数：例如方法接收者，输入参数；
+   1. 调用汇编代码完成待用逻辑，需要传递的参数包括：内存布局类型frametype, 函数指针fn, 内存地址args，栈大小frametype.size, 输入参数与返回值的内存间隔retOffset；
+   1. 完成调用后，如果函数没有返回，则将清空args，并放入到framePool中；如果有返回值，则清空args中输入参数部分，并将输出包装位ret切片后返回；
