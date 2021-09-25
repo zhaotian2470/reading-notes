@@ -66,7 +66,7 @@ Go语言中，变量之间没有隐式类型转换，不能类型之间只能强
 
 ## 字符串的实现
 Go语言使用如下实现表示字符串
-``` go
+```go
 type StringHeader struct {
 	Data uintptr
 	Len int
@@ -88,7 +88,7 @@ Go语言中的数组，具有如下特点：
 * 在复制和传递时，为值赋值；
 
 其底层实现如下：
-``` go
+```go
 type Array struct {
 	Elem *Type
 	Bound int64
@@ -99,7 +99,7 @@ type Array struct {
 
 ## 切片的实现
 切片的底层数据结构如下：
-``` go
+```go
 type SliceHeader struct {
 	Data uintptr // 切片元素对应的底层数据元素的地址
 	Len int      // 切片中元素的数目
@@ -135,7 +135,7 @@ map的并发冲突：
 
 ## 哈希表底层结构
 哈希表的定义如下：
-``` go
+```go
 type hmap struct {
 	count int                 // map元素的个数
 	flags uint8               // map状态，例如是否写入
@@ -217,7 +217,7 @@ Go语言中有两种接口：
 
 ### 带方法签名的接口
 带方法签名的接口，定义实现如下：
-``` go
+```go
 type iface struct {
 	tab *itab           // 类型信息
 	data unsafe.Pointer // 数据信息，例如：动态类型的数据信息
@@ -243,7 +243,7 @@ type interfacetype struct {
 
 ### 空接口
 空接口的定义如下：
-``` go
+```go
 type eface struct {
 	_type *_type        // 动态类型信息
 	data unsafe.Pointer // 动态数据信息
@@ -257,7 +257,7 @@ type eface struct {
 * reflect.Value可以看成反射的值，是一个结构体，内部包含很多方法；
 * reflect.Type可以看成反射的实际类型，是一个接口，包含和类型有关的很多方法签名；
 对应的定义如下：
-``` go
+```go
 type Type interface {
 	Align() int
 	FieldAlign() int
@@ -308,3 +308,82 @@ type Type interface {
    1. 构建参数：例如方法接收者，输入参数；
    1. 调用汇编代码完成待用逻辑，需要传递的参数包括：内存布局类型frametype, 函数指针fn, 内存地址args，栈大小frametype.size, 输入参数与返回值的内存间隔retOffset；
    1. 完成调用后，如果函数没有返回，则将清空args，并放入到framePool中；如果有返回值，则清空args中输入参数部分，并将输出包装位ret切片后返回；
+
+# 协程初探
+
+## 线程上下文切换
+当发生线程上线文切换时，需要从操作系统用户态转移到内核态，记录上一个线程的重要寄存器值、进程状态等信息，将这些信息保存在操作系统线程控制块（Thread Control Block）中。
+当切换到下一个要执行的线程时，需要重新加载重要的CPU寄存器值，并从内核态转移到用户态。
+如果线程属于不同的进程时，还需要更新额外的状态信息、内存地址空间，同时将新的页表（page tables）导入内存。
+
+## 线程和协程
+线程和协程的区别：
+* 调度方式：线程通过内核调度，协程通过Go语言运行时的调度器调度，属于用户态；
+* 调度策略：线程大部分时间是抢占式的，协程一般情况下是协作式调度，只有运行很长时间时，才会被强制抢占；
+* 上下文切换：协程上下文切换速度较快：不用经过用户态/内核态的切换；保存的状态、寄存器值较少；
+* 栈的大小：线程栈大小在创建时指定，默认相对较大；协程栈大小可以自动调整，默认值为2K，很小；
+
+## 主协程和子协程
+main函数对应的协程叫做主协程，它和其它子协程的区别：主协程退出时，程序自动退出
+
+## GMP模型
+GMP的含义：
+* G：Goroutine，应用程序级别的线程，轻量级的线程；
+* M：Machine，操作系统的线程；
+* P：Process，处理器；
+
+GMP之间的关系：
+* 任意时刻，一个P只能绑定一个M，并且包括多个本地G；
+* M不是固定的绑定在一个P上，可以转移到其它P；
+* G不是固定的绑定在一个P上，可以转移到其它P；
+
+
+# 深入协程设计与调度原理
+
+## 协程的生命周期与状态转移
+协程的状态包括：
+* _Gidle：刚开始创建时的状态；
+* _Gdead：初始化完成，或者协程销毁时的状态；
+* _Grunnable：等待运行；
+* _Grunning：正在运行；
+* _Gwaiting：运行时被锁定，不能执行用户代码，在垃圾回收、channel通信等情况下经常碰到这种情况；
+* _Gsyscal：执行系统调用；
+* _Gpreempted：被强制抢占；
+* _Gcopystack：将协程中的栈转移到新栈时的状态；
+
+对应的流程图如下（可能有错误）：
+```mermaid
+stateDiagram
+[*] --> _Gidle
+_Gidle --> _Gdead_1
+_Gdead_1 --> _Grunnable
+_Grunnable --> _Grunning
+_Grunning --> _Gdead_2
+_Gdead_2 --> [*]
+
+_Grunning --> _Gsyscall
+_Grunning --> _Gwaiting
+_Grunning --> _Gpreempted
+_Grunning --> _Gcopystack
+
+_Gsyscall --> _Grunnable
+
+_Gwaiting --> _Grunnable
+
+_Gpreempted --> _Grunnable
+
+_Gcopystack --> _Grunning
+```
+
+## 特殊协程g0与协程切换
+每个m都有一个特殊协程g0:
+* g0运行在操作系统线程栈上，并且可以重复使用该栈，其它协程使用协程栈；
+* g0执行固定的调度代码，其它协程执行用户代码；
+
+协程调度流程：
+* 将当前协程g1执行上下文切换的需要的信息保存到g.gobuf中；
+* 执行特殊协程g0；
+* g0选择协程g2，并调度执行；
+
+## 线程绑定
+Go语言运行时的调度器，使用线程本地存储将操作系统的线程与代表线程的m结构体绑定在一起，m.tls[0]保存当前线程正在运行的协程g；
