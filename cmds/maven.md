@@ -57,12 +57,12 @@ dependencies scope：
 * import：在pom的dependencymanagement使用，引入依赖版本；
 
 transitive dependencies：依赖会按照一定如下规则传递：
-       |compile|provided|runtime|test
--------|:-----:|:------:|:-----:|:--:
-compile|compile|-|runtime|-
-provided|provided|-|provided|-
-runtime|runtime|-|runtime|-
-test|test|-|test|-
+|       |compile|provided|runtime|test|
+|-------|:-----:|:------:|:-----:|:--:|
+|compile|compile|-|runtime|-|
+|provided|provided|-|provided|-|
+|runtime|runtime|-|runtime|-|
+|test|test|-|test|-|
 上表的解释：表左边表示项目A依赖B的scope，表上面表示项目B依赖项目C的scpoe，表格内容表示项目A依赖项目C的scope，-表示不依赖
 
 BOM（bill of materials）POM：
