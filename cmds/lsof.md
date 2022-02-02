@@ -1,6 +1,6 @@
 # useful commands
 ```
-lsof -i -n -P # list internet connections
+lsof -i -nP # list internet connections
 ```
 
 # useful parameters
