@@ -1,6 +1,6 @@
 # 有用命令
 ## 合并行
-合并拥有相同的第一列的所有行，脚本类似
+合并拥有相同的第一列的所有行:
 ```awk
 #!/usr/bin/awk -f
 BEGIN {
@@ -24,5 +24,21 @@ BEGIN {
 END {
     for(i=1; i in o; i++)
         print a[o[i]]
+}
+```
+
+## 拆分行
+拆分所有行，每行重复拥有第一列:
+```awk
+#!/usr/bin/awk -f
+BEGIN {
+    FS="	"
+    OFS=","
+}
+
+{
+    for(i=2; i<=NF; i++) {
+	print $1,$i
+    }
 }
 ```
