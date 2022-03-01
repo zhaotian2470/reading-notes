@@ -232,3 +232,113 @@ limitations of consensus:
 * performance impact;
 * rely on network timeouts;
 * most consensus algorithms assume a fixed set of nodes
+
+# Derived Data
+data systems can be grouped into two categories:
+* systems of record: source of truth;
+* derived data systems;
+
+## Batch Processing
+mapreduce and distributed filesystems:
+* input: mapreduce normally reads from files on distributed filesystem;
+* process: mapreduce normally does not have any side effects other than producing the output;
+  * mapper: extract the key-value from input record;
+  * shuffle: partition key-value pairs by reducer, and then sort, copy data from mapper to deducer;
+  * reducer: iterate the key-value paris and produce output records;
+  * workflows: chain many mapreduce jobs(mapper, shuffle, reducer) together;
+* output: mapreduce normally writes to files on distributed filesystem;
+  * build search indexes;
+  * key-value stores;
+* mapreduce example: Hadoop;
+* distributed filesystem example: HDFS(Hadoop Distributed File System);
+* higher-level tools for Hadoop: Pig, Hive, Cascading, Crunch and FlumeJava;
+
+mapreduce joins and grouping:
+* map-side joins: need some assumptions about the size, sorting, and partitioning of the input datasets
+  * broadcast hash joins: join large dataset wiht a small dataset, and the small dataset can be loaded into memory;
+  * partitioned hash joins: partition inputs, then use broadcast hash joins;
+  * map-side merge joins: if inputs is partitioned and ordered, map side can merge join;
+* reduce-side joins and grouping: 
+  * sort-merge joins: sorting, copying to reducers, and merging of reducer inputs can be expensive
+    * mappers partitions the mapper output by key and then sorts the key-value paires;
+	* reducer can even always see the record from one mapper first;
+	* if a join input has hot key: the mapper sends hot key to one of random several reducers; use map-side join;
+
+beyond mapreduce: 
+* improve mapreduce usability: higher-level programming models: such as Pig, Hive, Cascading, Crunch;
+* improve materialization of intermediate state: dataflow engines
+  * handle an entire workflow as one job, and no intermediate state files, such as Spark, Tez, and Flink;
+  * features: if fails, recompute it;
+* batch processing graphs: 
+  * Pregel model: an optimization for batch processing graphs, such as Apache Giraph, Spark's GraphX API, and Flink's Gelly API;
+	* like mapper, a vertex sends memmsage to another vertex along the edge;
+    * like reducer, in each iteration, a function is called for each vertex;
+	* vertex remembers its state in memory from one iteration to another;
+
+## Stream Processing
+transmitting event streams:
+* direct messaging from producers to consumers: message may be lost
+  * UDP multicast;
+  * brokerless messaging libraries, such as ZeroMQ;
+  * metrics collector: such as StatsD/Brubeck;
+  * consumer exposed a service: HTTP/RPC request;
+* messag brokers: tolerate clients that come and go with asynchronous communication
+ * traditional message brokers implemented AMQP/JMS: message processing can be parallelized, such as RabbitMQ, ActiveMQ;
+ * partitioned logs message brokers: keep message order in a partition, such as Kafka;
+
+databases and streams:
+* change data capture(CDC): extract mutable database logs, such as Maxwell and Debezium for MySQL's binlog, Kafka Connect;
+* event sourcing: extract build on immutable events, and event store is append-only;
+
+processing streams:
+* input:
+  * log some timestamps: 
+    * event occurred time (according to device clock); 
+	* sent to server time (according to device clock); 
+	* received by server time (according to server time);
+  * window types:
+    * tumbling window: tumbling window has a fixed length, and every event belongs to exactly one window;
+	* hopping window: hopping window has a fixed length, but allows windows to overlap;
+	* sliding window: sliding window contains all the events that occur within some interval of each other;
+	* session window: session window groups together all events for the same user that occur closely together in time;
+* process:
+  * complex event processing (CEP): queries are submitted to a processing engine; when input streams maches queries, the engine emits a complex events;
+  * maintaining materialized views: keep derived data systems, and up to date with a source database;
+  * stream analytics: find specific event sequences, such as aggregation and statistics;
+* stream join: in order to solve SCD (slowly changing dimension, also called time-dependence joins), use a unique identifier for a particular version of the joined record
+  * stream-stream join (window join);
+  * stream-table join (stream enrichment);
+  * table-table join (materialized view maintenance);
+* fault tolerance:
+  * microbatching and checkpointting;
+  * atomic commit revisited;
+  * idempotence;
+* output: 
+  * generate other streams;
+  * storage systems, such as database, cache, search index;
+  * push to user, such as email alerts, push notification, real-time visualized dashboard;
+
+## The Future of Data Systems
+data integration:
+* combining specialized tools by deriving data;
+* unifying batch and stream processing: batch processing reprocesses historical data; stream processing processes recent updates;
+
+in order to implement derived database product, we can unify different pieces of software:
+* federeated databases: unifying reads;
+* unbundled databases: unifying writes;
+
+designing applications around data system: sepeartion of application code and state
+* save state in data sysmtem: application reads/writes state from/into data symstem; application subscribes data change notification;
+* run some application codes as data flow;
+* run some application codes as derivation function: such as trigger, stored procedure;
+
+aiming for correctness:
+* handling request exctly once: the end-to-end argument;
+* enforcing constrains: stream processor handles a request and emits more output streams;
+* timeliness and integrity: in many business contexts, it is acceptable to temporarily violate a constraint and fix it up later;
+  * timeliness: users observe up-to-date state;
+  * integrity: absence of corruption;
+* trust and verify:
+  * a culture of verification;
+  * design for auditability;
+

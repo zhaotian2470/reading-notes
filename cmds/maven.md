@@ -76,9 +76,14 @@ BOM（bill of materials）POM：
 
 ## Commands
 ```
+mvn dependency:tree
 mvn help:active-profiles
 mvn help:effective-pom
+mvn package # run by java, such as java -cp target/my-app-1.0-SNAPSHOT.jar com.mycompany.app.App
 ```
+
+## Parameter
+* -Ptest: 设置profile;
 
 ## stuff
 [maven user centre](https://maven.apache.org/guides/getting-started/maven-in-five-minutes.html)
