@@ -84,6 +84,7 @@ mvn package # run by java, such as java -cp target/my-app-1.0-SNAPSHOT.jar com.m
 
 ## Parameter
 * -Ptest: 设置profile;
+* -Dmaven.test.skip: 跳过测试;
 
 ## stuff
 [maven user centre](https://maven.apache.org/guides/getting-started/maven-in-five-minutes.html)
