@@ -79,12 +79,44 @@ BOM（bill of materials）POM：
 mvn dependency:tree
 mvn help:active-profiles
 mvn help:effective-pom
-mvn package # run by java, such as java -cp target/my-app-1.0-SNAPSHOT.jar com.mycompany.app.App
+help:effective-settings
+mvn package # use build plugins for spring boot, and run by java, such as java -jar target/koo-ds-webapp-product-stock-0.0.1-SNAPSHOT.jar
 ```
 
 ## Parameter
-* -Ptest: 设置profile;
+* -Dapp.id=koo-ds-webapp-product-stock: 设置app id;
+* -Denv=neibu: 设置环境；
 * -Dmaven.test.skip: 跳过测试;
+* -Ptest: 设置profile;
+
+
+
+
+## pom.xml
+
+### build plugins for spring boot
+```xml
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>com.koolearn.ds.stock.KooDsWebappProductStockApplication</mainClass> <!-- 此处为主入口-->
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+```
 
 ## stuff
 [maven user centre](https://maven.apache.org/guides/getting-started/maven-in-five-minutes.html)
