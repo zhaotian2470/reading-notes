@@ -76,11 +76,14 @@ BOM（bill of materials）POM：
 
 ## Commands
 ```
+mvn clean	# removes file generated at build-time in a project's directory (target by default)
 mvn dependency:tree
 mvn help:active-profiles
 mvn help:effective-pom
-help:effective-settings
-mvn package # use build plugins for spring boot, and run by java, such as java -jar target/koo-ds-webapp-product-stock-0.0.1-SNAPSHOT.jar
+mvn help:effective-settings
+mvn install	# installs the package into the local repository for use as a dependency in other projects locally.
+mvn package	# copies the final package to the remote repository for sharing with other developers and projects.
+          	# if use build plugins for spring boot, we can run it, such as: java -jar target/koo-ds-webapp-product-stock-0.0.1-SNAPSHOT.jar
 ```
 
 ## Parameter
@@ -88,9 +91,6 @@ mvn package # use build plugins for spring boot, and run by java, such as java -
 * -Denv=neibu: 设置环境；
 * -Dmaven.test.skip: 跳过测试;
 * -Ptest: 设置profile;
-
-
-
 
 ## pom.xml
 
