@@ -18,6 +18,10 @@ Spring工程目录：
 * src/test/java：测试内容，参考main；
 * src/test/resources：测试内容，参考main；
 
+可以使用插件spring-boot-maven-plugin，将Spring打包成如下格式：
+* war: 用于打包老的web程序，包含内容多，需要运行在server中;
+* jar：用于打包Java库/插件/应用程序，有可能直接运行，大部分云平台支持，建议使用;
+
 Spring包括的库：
 * core spring framework：提供container、DI和其它功能，例如spring MVC，REST API，persistence，reactive-style programming；
 * spring boot：autoconfiguration，startar依赖，actuator（提供运行时信息），环境属性，测试支持；
@@ -27,10 +31,15 @@ Spring包括的库：
 * spring cloud：microservice支持；
 
 ## Developing web applicaitons
-默认情况下，templates只解析一次，对应结果会被缓存，以供后边使用。如果不想缓存，需要修改配置（thymeleaf是spring.thymeleaf.cache）。
+SpringMVC框架：
+* controller和view是解藕的，可以通过如下方式传递数据：controller里面model拷贝到request；view使用reques里面的数据；
+* view传递给web application的参数，可以通过Validation API（例如Hibernate）验证；
+
+thymeleaf的说明：
+* 在默认情况下，只解析一次templates，对应结果会被缓存，以供后边使用。如果不想缓存，需要修改配置（thymeleaf是spring.thymeleaf.cache）；
 
 ## Working with data
-Spring可以访问数据库的方式包括：JDBC（已经过时）和JPA（新项目使用）
+Spring可以访问数据库的方式包括：JDBCTemplate（已经过时）和JPA（新项目使用）
 
 JPA的使用：
 1. 构造entity：对应数据库记录；
@@ -46,33 +55,41 @@ JPA的使用：
 * custom user details service：定义数据库记录User，并实现接口UserDetails；定义UserRepository，实现findByUsername；定义UserRepositoryUserDetailsService，实现UserDetailsService；
 
 配置认证信息（WebSecurityConfigurerAdapter.configure）：
+* 哪些页面需要认证；
 * 指定登录页面；
 * 指定登出操作；
-* 哪些页面需要认证；
-* 阻止CSRF；
+* 阻止CSRF(cross-site request forgery)；
 
 获取用户信息：
 * 注入principal对象；
 * 注入authentication对象；
-* 从securitycontextholder获取security context；
-* 利用注解方法authenticationprincipal；
+* 利用注解方法authenticationprincipal：和注入authentication对象相比，不需要强制转化；
+* 从securitycontextholder获取security context：任何地方都可以使用这种方法；
 
 ## Working with configuration properties
-spring environment的来源：
+配置的作用：
+* Bean配置（Bean wiring）: declares application components to be created as beans and how they should be injected into each other；
+* 属性配置（Property injection）: sets values on beans；
+
+spring environment聚合多个来源的数据，提供统一的属性配置：
 * JVM系统属性；
 * 操作系统环境变量，例如SERVER_PORT=9090；
 * 命令行参数，例如--server.port=9090；
-* 配置文件，例如src/main/resources/application.yml；
+* 配置文件，例如src/main/resources/application.properties，src/main/resources/application.yml；
 
-配置属性：
-* 文件additional-spring-configuration-metadata.json指定可配置的属性；
-* 文件application.properties指定属性对应的值；
-* 注解configurationproperties使用属性；
+属性配置的访问：注解configurationproperties读取属性；
+
+属性配置元数据（方便IDE查找），可以存放到如下文件：src/main/resources/META-INF/additional-spring-configuration-metadata.json指定可配置的属性；
 
 配置profile-specific属性：
-* 放在不同的配置文件中；
-* 使用---分隔，并且指定不同的spring.profiles；
-* 放到不同的profile注解下；
+* 放在不同的配置文件中：application-{profile name}.yml；application-{profile name}.properties；
+* 对于yml配置，使用---分隔，并且指定不同的spring.profiles；
+* 放到程序中不同的profile注解下：不同profile使用不同的bean：@Profile({"dev", "qa"})；
+
+配置激活profile的方式：
+* 配置属性：spring.profiles.active；
+* 环境变量：export SPRING_PROFILES_ACTIVE=prod,audit,ha；
+* 命令行参数：--spring.profiles.active=prod；
 
 # Integrated Spring
 
@@ -80,7 +97,7 @@ spring environment的来源：
 CRUD模式：
 * create(post): /；
 * read(get): /, /{id}；
-* update(put/patch): /{id}；
+* update(put-replace all attributes; patch-replace some attributes): /{id}；
 * delete(delete): /{id}；
 
 内置REST支持：
@@ -199,6 +216,7 @@ spring运行方式：
 * configurationproperties：属性配置；
 * conponent：用于控件的component scan；
 * controller：用于http接口的component scan；
+* crossorigin：用于跨域访问(cross-origin resource sharing)；
 * data：提供一套方法，例如构造函数，getter，setter，equals, hashCode, toString等等；
 * enableautoconfiguration：spring启动auto configuration；
 * enableconfigserver：spring启动config server；
@@ -214,15 +232,16 @@ spring运行方式：
 * manytoone：多对一的数据关系；
 * prepersist：保存数据之前的hookx；
 * noargsconstructor：不带参数的构造函数；
-* requestingmapping：和其它xxxmapping，一起处理http请求；
-* requiredargsconstructor：带参数的构造函数；
-* runwith：指示JUnit运行测试；
 * repository：用于数据库访问；
 * repositoryrestcontroller：提供数据库的REST接口；
-* restcontroller：用于rest接口的controller；
+* requestingmapping：和其它xxxmapping，一起处理http请求；
+* requiredargsconstructor：带参数的构造函数；
+* responsestatus: http响应状态；
+* restcontroller：用于rest接口的controller，返回数据直接写到http响应里面；
+* runwith：指示JUnit运行测试，可以带参数SpringRunner.class（spring使用的test runner，提供spring application context）；
 * service：用于服务的component scan；
 * slf4j：打印日志；
-* springbootapplication：包括三个注解，参考对应的解释；
+* springbootapplication：包括三个注解（springbootconfiguration, enableautoconfiguration, componentscan），参考对应的解释；
 * springbootconfiguration：将该类作为configuration类，可以看成特殊的configuration注解；
 * springboottest：指示JUnit跑测试用例的时候，使用spring boot能力，类似运行SpringApplication.run()；
 * table：指定表名字；
