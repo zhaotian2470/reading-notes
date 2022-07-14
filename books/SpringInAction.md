@@ -112,26 +112,36 @@ spring通过几种方法调用REST API：
 
 ## Sending messages asynchronously
 spring支持的异步通信：
-* JMS（Java Message Service）；
-* RabbitMQ；
-* AMQP（Advanced Message Queueing Protocol）；
-* kafka；
+JMS（Java Message Service）:such as ActiveMQ；
+* receive modes: pull, push;
+
+AMQP（Advanced Message Queueing Protocol）: such as RabbitMQ 
+* sent to exchanges; 
+* mq routes message from exchanges to queues with routing kyes；
+* consumed from queues;
+* receive modes: pull, push;
+
+kafka:
+* kafka cluster has many topics;
+* kafka topic has many partition;
+* messages in a partition are sequencial;
+* only support push mode;
 
 ## Integrating Spring
-以整合文件为例，需要做如下操作：
-* 代码修改：实现MessagingGateway，将channel输出到文件；
-* 配置修改：配置文件网关（XML、Java、DSL）；
+整合的使用：
+* 实现自定义的组件：例如创建网关；
+* 配置组件之间的关系，可以使用一下配置方式：XML、Java、DSL；
 
-整合需要的组件包括：
-* channels：传递消息；
+整合的组件：
+* channels：仅用于传递消息，不处理消息；
 * filters：过滤消息；
 * transformers：转换消息；
 * routers：消息路由；
 * splitters：拆分消息；
 * aggregators：聚合消息；
-* service activators：将消息发送到接口，并将返回值发送到输出channel；
-* channel adapters：连接channel和外部系统，分为inbound、outbound，spring已经提供很多channel adapters；
-* gateways：通过接口将数据导入整合流；
+* service activators：一般用于从input channel接收消息后调用服务处理，也可以将处理后的消息再发送到output channel；
+* gateways：和外部对接的接口，可以接收外部的输入，或者将结果输出到外部；
+* channel adapters：和外部对接的适配器，可以接收外部的输入，或者将结果输出到外部，spring已经提供很多channel adapters（endpoint modules）；
 
 # Reactive Spring
 ignore
@@ -146,18 +156,16 @@ spring cloud提供服务注册/发现组件eureka：
 
 ## Managing configuration
 spring cloud提供配置服务器config server：
-* config server支持从下列地方拉取数据：git（非敏感数据），hashicorp vault（敏感数据）；
+* config server支持从下列地方拉取数据：git（建议保存非敏感数据），hashicorp vault（建议保存敏感数据）；
 * config server通过http接口提供配置；
-* config server可以提供application/profile专用的属性：git文件名保护application/profile；
-* config server可以提供敏感信息：git（加密），hashicorp vault；
+* config server可以提供application/profile专用的属性；
 * config server可以提供动态更新数据：手动（调用服务actuator接口），自动（git通过webhook通知config server，config server通过message broker通知应用程序；应用程序拉取最新配置）；
 
 ## Handling failure and latency
 spring cloud提供circuit breaker服务：
 * hystrix提供circuit breaker服务；
-* hystrix stream通过http接口展示circuit breaker数据；
+* hystrix dashboard使用hystrix stream的数据，可视化显示circuit breaker数据；
 * turbine聚合多个服务circuit breaker数据；
-* hystrix dashboard可视化查看circuit breaker数据；
 
 # Deployed Spring
 
@@ -205,7 +213,7 @@ spring运行方式：
 * IDE中运行：适用于开发；
 * 命令行运行，例如maven goal sprint-boot:run；
 * jar：建议的生产运行方式，可以放到Docker中运行；
-* war：依赖容器，不建议；
+* war：老的生产运行方式，不建议；
 
 
 # Notes
@@ -222,18 +230,26 @@ spring运行方式：
 * enableconfigserver：spring启动config server；
 * enablehystrix：开启circuit breaker；
 * enablewebsecurity：开启web认证；
+* endpoint：自定义actuator；
 * entity：数据库记录；
-* feignclient：feign（服务自动发现）客户端；
+* feignclient：feign客户端，自动产生实现，类似repository；
 * generatedvalue：自动产生的值；
+* header: 文件名应该在消息头中;
+* hystrixcommand: fallback调用的方法;
 * id：记录的uuid；
 * javax.validation.constraints：提供http接口参数验证；
+* jmslistener：push模式的jms客户端；
+* kafkalistener: push模式的kafka客户端;
 * loadbalanced：使用负载均衡，例如ribbon；
+* managedresource：JMX MBean；
 * manytomany：多对多的数据关系；
 * manytoone：多对一的数据关系；
+* messaginggateway: spring integration为网关产生一个实现，类似repository;
 * prepersist：保存数据之前的hookx；
 * noargsconstructor：不带参数的构造函数；
+* rabbitlistener: push模式的rabbitmq客户端;
 * repository：用于数据库访问；
-* repositoryrestcontroller：提供数据库的REST接口；
+* repositoryrestcontroller：自定义数据库的REST接口；
 * requestingmapping：和其它xxxmapping，一起处理http请求；
 * requiredargsconstructor：带参数的构造函数；
 * responsestatus: http响应状态；
