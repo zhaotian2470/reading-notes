@@ -20,10 +20,9 @@ squid是开源软件，目前仍在开发中，并且功能完善
 网上有很多免费的签名证书，我这里使用let's encrypt，[获取签名证书的流程](https://certbot.eff.org/instructions?ws=other&os=debianstretch)
 
 ### 安装squid
-如果系统自带ssl版本的squid，例如（squid-openssl），则使用系统自带的版本即可，否则需要自行安装。
+如果系统自带ssl版本的squid，例如（squid-openssl），则可以使用系统自带的版本，否则需要自行安装。
 
-我使用的squid版本为3.5.38，可以从squid官网找到：[squid的下载地址](http://www.squid-cache.org/Versions/)查找该版本。
-[squid安装过程](https://wiki.squid-cache.org/SquidFaq/CompilingSquid)，重点注意：
+我采用自行安装的方法，安装的squid版本为3.5.38，可以从squid官网找到：[squid的下载地址](http://www.squid-cache.org/Versions/)。[squid安装过程](https://wiki.squid-cache.org/SquidFaq/CompilingSquid)，重点注意：
 * 执行configure时，必须添加参数“--with-openssl”，确保支持HTTPS；
 * 手册中是否有相关系统的额外安装说明。例如对于Debian系统，手册详细介绍config的参数；
 * configure过程中，如果缺少其它依赖包，直接通过系统自带的包工具安装；
