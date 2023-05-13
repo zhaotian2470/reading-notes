@@ -68,11 +68,14 @@ refresh_pattern .		0	20%	4320
 ```
 
 ### 测试squid
-使用如下命令，测试squid代理是否正常：curl --proxy-insecure -x https://<proxy url> --proxy-user <username>:<password> https://www.google.com
-* <proxy url>: HTTPS证书域名；
-* <username>：用户名；
-* <password>：用户密码；
-
+使用如下命令，测试squid代理是否正常：
+```
+curl --proxy-insecure -x https://<proxy url> --proxy-user <username>:<password> https://www.google.com
+# <proxy url>: HTTPS证书域名；
+# <username>：用户名；
+# <password>：用户密码；
+```
+  
 ### 配置客户端
 客户端的代理配置如下：
 * 协议：HTTPS（注意不是HTTP，后面有一个S）;
