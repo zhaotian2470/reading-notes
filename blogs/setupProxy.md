@@ -19,12 +19,10 @@ squid是开源软件，目前仍在开发中，并且功能完善
 ### 安装HTTPS证书
 网上有很多免费的签名证书，我这里使用let's encrypt，[获取签名证书的流程](https://certbot.eff.org/instructions?ws=other&os=debianstretch)
 
-### 下载squid
-我使用的squid版本为3.5.38，可以从squid官网找到。
-[squid的下载地址](http://www.squid-cache.org/Versions/)查找该版本。
-
 ### 安装squid
-[squid安装过程](https://wiki.squid-cache.org/SquidFaq/CompilingSquid)，重点注意：
+如果系统自带ssl版本的squid，例如（squid-openssl），则建议使用系统自带的版本，否则需要自行安装（编译耗费时间）。
+
+我采用自行安装的方法，安装的squid版本为3.5.38，可以从squid官网找到：[squid的下载地址](http://www.squid-cache.org/Versions/)。[squid安装过程](https://wiki.squid-cache.org/SquidFaq/CompilingSquid)重点注意：
 * 执行configure时，必须添加参数“--with-openssl”，确保支持HTTPS；
 * 手册中是否有相关系统的额外安装说明。例如对于Debian系统，手册详细介绍config的参数；
 * configure过程中，如果缺少其它依赖包，直接通过系统自带的包工具安装；
@@ -68,11 +66,14 @@ refresh_pattern .		0	20%	4320
 ```
 
 ### 测试squid
-使用如下命令，测试squid代理是否正常：curl --proxy-insecure -x https://<proxy url> --proxy-user <username>:<password> https://www.google.com
-* <proxy url>: HTTPS证书域名；
-* <username>：用户名；
-* <password>：用户密码；
-
+使用如下命令，测试squid代理是否正常：
+```
+curl --proxy-insecure -x https://<proxy url> --proxy-user <username>:<password> https://www.google.com
+# <proxy url>: HTTPS证书域名；
+# <username>：用户名；
+# <password>：用户密码；
+```
+  
 ### 配置客户端
 客户端的代理配置如下：
 * 协议：HTTPS（注意不是HTTP，后面有一个S）;
