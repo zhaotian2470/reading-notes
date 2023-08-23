@@ -77,6 +77,8 @@ BOM（bill of materials）POM：
 ## Commands
 ```
 mvn clean	# removes file generated at build-time in a project's directory (target by default)
+mvn dependency:analyze
+mvn dependency:list
 mvn dependency:tree
 mvn help:active-profiles
 mvn help:effective-pom
