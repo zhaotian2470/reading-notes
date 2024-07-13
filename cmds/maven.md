@@ -74,6 +74,11 @@ BOM（bill of materials）POM：
 
 # Appendix
 
+## Examples
+```
+mvn install -pl module2 -am
+```
+
 ## Commands
 ```
 mvn clean	# removes file generated at build-time in a project's directory (target by default)
@@ -93,6 +98,8 @@ mvn package	# copies the final package to the remote repository for sharing with
 * -Denv=neibu: 设置环境；
 * -Dmaven.test.skip: 跳过测试;
 * -Ptest: 设置profile;
+* -pl dfzxvip-api: (projects to build)用于指定要编译的项目，例如子模块;
+* -am: (also make dependent)用于编译该子模块所依赖的所有模块;
 
 ## pom.xml
 
