@@ -14,7 +14,7 @@ squid是开源软件，目前仍在开发中，并且功能完善
 * 不安全的代理，可能被其它人窃听；
 * 不安全的代理，可能被其它人破坏：例如中间的网络设备根据包内容判断是否插入TCP的reset请求，从而导致某些网站不能通过代理访问；
 
-大部分Linux发行版都带squid，但自带的squid可能不支持HTTPS，因此我们最好从源代码安装。下面以Debian 9为例，说明从源代码搭建支持HTTPS的代理。
+大部分Linux发行版都带squid，但自带的squid可能不支持HTTPS。碰到这种情况，最好从源代码安装。下面以Debian 9为例，说明从源代码搭建支持HTTPS的代理。
 
 ### 安装HTTPS证书
 网上有很多免费的签名证书，我这里使用let's encrypt，[获取签名证书的流程](https://certbot.eff.org/instructions?ws=other&os=debianstretch)
@@ -81,3 +81,25 @@ curl --proxy-insecure -x https://<proxy url> --proxy-user <username>:<password> 
 * 端口：443；
 * 用户名/密码：添加账号时使用的用户名/密码；
 享受代理上网:)
+
+### 更新HTTPS证书后Squid自动加载新证书
+Certbot自动更新证书后，squid需要加载新证书：
+* 创建文件/usr/local/bin/reload_squid.sh，并且填充如下内容：
+```
+#!/bin/bash
+
+# Reload Squid configuration
+sudo squid -k reconfigure
+```
+* 给文件/usr/local/bin/reload_squid.sh可执行权限:
+```
+sudo chmod +x /usr/local/bin/reload_squid.sh
+```
+* 编辑Certbot的续期配置文件/etc/letsencrypt/renewal/yourdomain.com.conf，在文件中添加或修改renew_hook选项以执行reload_squid.sh脚本：
+```
+renew_hook = /usr/local/bin/reload_squid.sh
+```
+* 手动运行Certbot更新证书，以验证配置是否正确：
+```
+sudo certbot renew --force-renewal
+```
