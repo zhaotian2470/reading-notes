@@ -29,6 +29,7 @@ goroutine 1 [running]:
 * LRQ(Local Run Queue)：本地执行队列，每个P上的G组成；
 * GRQ(Global Run Queue)：全局执行队列，没有P的G组成；
 
+
     自己的推测：
 * G和P的绑定：正在执行的G，需要和P绑定；可以执行的G，或者和P绑定，或者在GRQ中；
 * G和M的绑定：正在执行的G，需要和M绑定；等待状态的G，或者和M绑定（例如同步I/O调用），或者在其他地方（例如异步网络调用的G在Net Poller）；
@@ -39,27 +40,31 @@ goroutine 1 [running]:
 * Cooperating Scheduler：低版本Go采用的调度方式，会导致tight loop程序不能中断；
 * Preemptive Scheduler：高版本Go采用的调度方式；
 
+
     Goroutine的状态：
 * Waiting：等待状态，例如操作系统的系统调用，同步调用等；
 * Runnable：可运行状态，等待调度；
 * Executing：执行状态；
+
 
     Context Switching：
 * context switching的来源包括：go创建新线程；gc；系统调用；同步调用；
 * context switching发生在用户代码，不需要切换到内核态代码，因此性能较高：例如操作系统的上下文切换需要执行12k指令，go的上下文切换至需要2.4k指令；
 
 ## Scenario
-    异步系统调用（以网络操作为例）：
- 1. G1发起网络操作；
- 2. G1从当前的M中移除，放到Net Poller上，并且另外一个线程G2在M上执行；
- 3. G1的网络操作完毕后，重新放到M对应P的LRQ；
+### 异步系统调用（以网络操作为例）：
+1. G1发起网络操作；
+2. G1从当前的M中移除，放到Net Poller上，并且另外一个线程G2在M上执行；
+3. G1的网络操作完毕后，重新放到M对应P的LRQ；
 
-    同步系统调用（以I/O操作为例）：
+
+### 同步系统调用（以I/O操作为例）：
 1. G1发起I/O操作；
 2. G1、M1一起从当前的P中移除，P绑定新M2并且运行G2；
 3. G1的I/O操作完毕后，重新放到P的LRQ，M1被空置；
 
-    工作窃取：
+
+### 工作窃取：
 * P可能从GRQ中窃取G，放到本地LRQ；
 * 如果P运行完毕，会从其它P的LRQ、GRQ窃取G，还可能查看网络情况；
 
@@ -79,7 +84,7 @@ goroutine 1 [running]:
 * 一些任务，似乎只适合顺序执行：例如排序；
 
 # Reference
-[Scheduling In Go : Part I - OS Scheduler](https://www.ardanlabs.com/blog/2018/08/scheduling-in-go-part1.html)
-[Scheduling In Go : Part II - Go Scheduler](https://www.ardanlabs.com/blog/2018/08/scheduling-in-go-part2.html)
-[Scheduling In Go : Part III - Concurrency](https://www.ardanlabs.com/blog/2018/12/scheduling-in-go-part3.html)
+* [Scheduling In Go : Part I - OS Scheduler](https://www.ardanlabs.com/blog/2018/08/scheduling-in-go-part1.html)
+* [Scheduling In Go : Part II - Go Scheduler](https://www.ardanlabs.com/blog/2018/08/scheduling-in-go-part2.html)
+* [Scheduling In Go : Part III - Concurrency](https://www.ardanlabs.com/blog/2018/12/scheduling-in-go-part3.html)
 
