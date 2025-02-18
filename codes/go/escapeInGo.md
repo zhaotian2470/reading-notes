@@ -45,7 +45,8 @@ go tool pprof -alloc_space memcpu.test mem.out
 * 方法：接收者；
 * 少数例外：例如Unmarshaling总使用指针语义；
 
-    语义选择建议：
+
+  语义选择建议：
 * Built-In Types： value semantics；
 * Reference Types： value semantics；
 * User Defined Types：建议和factory function保持一致；

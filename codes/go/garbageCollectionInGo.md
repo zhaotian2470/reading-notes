@@ -1,11 +1,11 @@
 # Semantics
 ## Introduction
-    GC（Garbage Collector）相关概念：
+  GC（Garbage Collector）相关概念：
 * GC负责heap上内存的分配、回收：GC不需要处理stack上内存；
 * Go的GC使用tri-color mark and sweep collector
 
 ## Collector Behavior
-    GC过程如下：
+  GC过程如下：
 * Mark setup：STW（Stop The World）；
 * Marking：concurrent，可能会启动一些MA（Mark Assist）协程，帮助GC；
 * Mark termination：STW（Stop The World）；
@@ -14,7 +14,7 @@
     上述每个过程，都会降低程序的执行速度。
 
 ## GC Trace
-    运行go程序时，添加环境变量"GODEBUG=gctrace=1"可以将gc情况显示到stderr。下面是对一行信息的分析：
+  运行go程序时，添加环境变量"GODEBUG=gctrace=1"可以将gc情况显示到stderr。下面是对一行信息的分析：
 ```
 gc 1405 @6.068s 11%: 0.058+1.2+0.083 ms clock, 0.70+2.5/1.5/0+0.99 ms cpu, 7->11->6 MB, 10 MB goal, 12 P
 
@@ -46,22 +46,22 @@ gc 1404     : The 1404 GC run since the program started
 ```
 
 ## Pacing
-    环境变量GOGC，可以控制GC的频率（pacing）：缺省值一般为 `100`，表示当堆使用量相对于上一次GC后的大小增加100%时触发下一次 GC。
+  环境变量GOGC，可以控制GC的频率（pacing）：缺省值一般为 `100`，表示当堆使用量相对于上一次GC后的大小增加100%时触发下一次 GC。
 
 ## Conclusion
-    为了提升程序速度，不应该减少GC的频率（pacing），而应该少使用堆。
+  为了提升程序速度，不应该减少GC的频率（pacing），而应该少使用堆。
 
 # GC Traces
 ## Running The Application
-    运行时添加环境变量，控制GC的显示：
+  运行时添加环境变量，控制GC的显示：
 * GOGC=off：不进行gc；
 * GOGC=100：当堆使用量相对于上一次GC后的大小增加100%时触发下一次 GC；
 * GODEBUG=gctrace=1：显示gc信息；
 * GODEBUG=gctrace=1,gcpacertrace=1：显示更多gc信息；
 
-
-    运行时展示pprof：
+  运行时展示pprof：
 * 添加如下代码，可以将pprof信息绑定到缺省Web服务器的/debug/pprof/allocs：
+
 ```
 import net/http/pprof
 ```
@@ -75,7 +75,7 @@ top 6 -cum # 显示6个分配堆内存最多的函数
 list rssSearch # 显示函数分配堆内存的情况
 ```
 
-    如果想给Web Server做压测，可以使用命令：hey
+  如果想给Web Server做压测，可以使用命令：hey
 
 ## Conclusion
     如果想提升go程序性能，需要减少堆内存的使用；

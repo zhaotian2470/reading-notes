@@ -1,5 +1,6 @@
 # Introduction
-    诊断Go程序的手段包括：
+
+  诊断Go程序的手段包括：
 * Profiling：展示程序整体性能，例如CPU，内存；
 * Tracing：展示一个请求/函数的情况，例如延迟；
 * Debugging：展示程序运行状态，用于查看程序是否正确等；
@@ -9,7 +10,8 @@
 # Profiling
 
 ## Concept
-    Go Profiling包括如下方面：
+
+  Go Profiling包括如下方面：
 * CPU；
 * Heap；
 * ThreadCreate：OS线程的创建；
@@ -17,13 +19,14 @@
 * Block：同步原语（例如timer，channel）上的等待；
 * Mutex：锁竞争；
 
-    Profiling的手段：
+
+  Profiling的手段：
 * Go Profiling: 代码（[net/http/pprof](https://go.dev/pkg/net/http/pprof/)或者[runtime/pprof](https://go.dev/pkg/runtime/pprof)）go test产生，go tool pprof展示;
 * OS Profiling：Linux的[perf tools](https://perf.wiki.kernel.org/index.php/Tutorial)，macOS的[Instruments](https://developer.apple.com/library/content/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/)
 
 ## Examples
-    Profiling数据的产生：
-* 对于go test命令，添加参数：cpuprofile、 -memprofile ；
+  Profiling数据的产生：
+* 对于go test命令，添加参数：-cpuprofile、 -memprofile ；
 * 对于go程序，添加如下代码将会在http endpoint "/debug/pprof/"展示profiling数据；
 ```
 import _ "net/http/pprof"
@@ -55,7 +58,8 @@ func main() {
     ...
 ```
 
-    Profiling数据的分析：
+
+  Profiling数据的分析：
 * 入口命令（有很多参数，例如--nodefraction表示隐藏占比小的节点）：
 ```
 go tool pprof <binary> <prof file>
@@ -66,11 +70,12 @@ go tool pprof http://localhost:6060/debug/pprof/profile   # 30-second CPU profil
 go tool pprof http://localhost:6060/debug/pprof/heap      # heap profile
 go tool pprof http://localhost:6060/debug/pprof/block     # goroutine blocking profile
 ```
-* top：展示占用资源最多的函数，默认是flat，接收参数-cum；
+* top：展示占用资源最多的函数，默认是-flat，接收参数-cum；
 * list：展示每行代码资源占用情况；
 * web：展示svg图片；
 
-    Profiling转换为火焰图的操作命令：
+
+  Profiling转换为火焰图的操作命令：
 ```
 go tool pprof -raw -output=cpu.txt havlak1 havlak1.prof
 ~/go/src/github.com/brendangregg/FlameGraph/stackcollapse-go.pl cpu.txt | ~/go/src/github.com/brendangregg/FlameGraph/flamegraph.pl > tmp.svg
@@ -108,8 +113,13 @@ go build -gcflags="-dwarflocationlists=true" # 协助调试优化后的程序
 -   [runtime.NumGoroutine](https://go.dev/pkg/runtime#NumGoroutine)  协程相关的数据；
 
 ## Execution tracer
-* 产生数据：
+* 产生数据：添加如下代码，可以将trace信息输出到stdout
 ```
+import "runtime/trace"
+
+func main() {
+     trace.Start(os.Stdout)
+     defer trace.Stop()
 ```
 * 分析数据：
 ```
