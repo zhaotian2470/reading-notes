@@ -18,6 +18,7 @@ squid是开源软件，目前仍在开发中，并且功能完善
 
 ### 安装HTTPS证书
 网上有很多免费的签名证书，我这里使用let's encrypt，[获取签名证书的流程](https://certbot.eff.org/instructions?ws=other&os=debianstretch)
+
 如果没有域名，并且使用自签名，参考命令(替换ip地址出现的两处地方)：
 ```
 openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 \
